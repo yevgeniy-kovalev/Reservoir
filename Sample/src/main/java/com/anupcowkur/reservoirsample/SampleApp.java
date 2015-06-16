@@ -2,7 +2,7 @@ package com.anupcowkur.reservoirsample;
 
 import android.app.Application;
 
-import com.anupcowkur.reservoir.Reservoir;
+import com.anupcowkur.reservoir.Vault;
 
 /**
  * The main application.
@@ -13,7 +13,7 @@ public class SampleApp extends Application {
     public void onCreate() {
         super.onCreate();
         try {
-            Reservoir.init(this, 2048);
+            Vault.init(this, 2048);
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -22,7 +22,7 @@ import static org.junit.Assert.assertThat;
 /**
  * The main reservoir class.
  */
-public class ReservoirTest {
+public class VaultTest {
 
     MainActivity mainActivity;
 
@@ -48,9 +48,9 @@ public class ReservoirTest {
 
         testPutObject.setTestString(TEST_STRING);
 
-        Reservoir.put(KEY, testPutObject);
+        Vault.put(KEY, testPutObject);
 
-        TestClass testResultObject = Reservoir.get(KEY, TestClass.class);
+        TestClass testResultObject = Vault.get(KEY, TestClass.class);
 
         assertEquals(TEST_STRING, testResultObject.getTestString());
 
@@ -64,10 +64,10 @@ public class ReservoirTest {
 
         testPutObject.setTestString(TEST_STRING);
 
-        Reservoir.putAsync(KEY, testPutObject, new ReservoirPutCallback() {
+        Vault.putAsync(KEY, testPutObject, new VaultPutCallback() {
             @Override
             public void onSuccess() {
-                Reservoir.getAsync(KEY, TestClass.class, new ReservoirGetCallback<TestClass>() {
+                Vault.getAsync(KEY, TestClass.class, new VaultGetCallback<TestClass>() {
                     @Override
                     public void onSuccess(TestClass testResultObject) {
                         assertEquals(TEST_STRING, testResultObject.getTestString());
@@ -96,7 +96,7 @@ public class ReservoirTest {
 
         testPutObject.setTestString(TEST_STRING);
 
-        Reservoir.putAsync(KEY, testPutObject).subscribe(new Observer<Boolean>() {
+        Vault.putAsync(KEY, testPutObject).subscribe(new Observer<Boolean>() {
             @Override
             public void onCompleted() {
 
@@ -109,7 +109,7 @@ public class ReservoirTest {
 
             @Override
             public void onNext(Boolean success) {
-                Reservoir.getAsync(KEY, TestClass.class).subscribe(new Observer<TestClass>() {
+                Vault.getAsync(KEY, TestClass.class).subscribe(new Observer<TestClass>() {
                     @Override
                     public void onCompleted() {
 
@@ -134,7 +134,7 @@ public class ReservoirTest {
     public void testSyncShouldThrowNullPointerExceptionWhenObjectDoesNotExist() throws
             Exception {
 
-        Reservoir.get("non_existent_key", TestClass.class);
+        Vault.get("non_existent_key", TestClass.class);
 
     }
 
@@ -143,7 +143,7 @@ public class ReservoirTest {
     public void testAsyncShouldCallOnFailureWhenObjectDoesNotExist() throws
             Exception {
 
-        Reservoir.getAsync("non_existent_key", TestClass.class, new ReservoirGetCallback<TestClass>() {
+        Vault.getAsync("non_existent_key", TestClass.class, new VaultGetCallback<TestClass>() {
             @Override
             public void onSuccess(TestClass object) {
                 fail();
@@ -164,7 +164,7 @@ public class ReservoirTest {
         expectedEx.expect(IOException.class);
         expectedEx.expectMessage(SimpleDiskCache.OBJECT_SIZE_GREATER_THAN_CACHE_SIZE_MESSAGE);
 
-        Reservoir.put(KEY, TestUtils.getLargeString());
+        Vault.put(KEY, TestUtils.getLargeString());
     }
 
     @Test
@@ -172,7 +172,7 @@ public class ReservoirTest {
     public void testASyncShouldThrowIOExceptionWhenObjectSizeGreaterThanCacheSize() throws
             Exception {
 
-        Reservoir.putAsync(KEY, TestUtils.getLargeString(), new ReservoirPutCallback() {
+        Vault.putAsync(KEY, TestUtils.getLargeString(), new VaultPutCallback() {
             @Override
             public void onSuccess() {
                 fail();
@@ -193,11 +193,11 @@ public class ReservoirTest {
 
         TestClass testPutObject = new TestClass();
         testPutObject.setTestString(TEST_STRING);
-        Reservoir.put(KEY, testPutObject);
+        Vault.put(KEY, testPutObject);
 
-        Reservoir.delete(KEY);
+        Vault.delete(KEY);
 
-        assertEquals(false, Reservoir.contains(KEY));
+        assertEquals(false, Vault.contains(KEY));
 
     }
 
@@ -207,13 +207,13 @@ public class ReservoirTest {
 
         TestClass testPutObject = new TestClass();
         testPutObject.setTestString(TEST_STRING);
-        Reservoir.put(KEY, testPutObject);
+        Vault.put(KEY, testPutObject);
 
-        Reservoir.deleteAsync(KEY, new ReservoirDeleteCallback() {
+        Vault.deleteAsync(KEY, new VaultDeleteCallback() {
             @Override
             public void onSuccess() {
                 try {
-                    assertEquals(false, Reservoir.contains(KEY));
+                    assertEquals(false, Vault.contains(KEY));
                 } catch (Exception e) {
                     fail();
                 }
@@ -232,9 +232,9 @@ public class ReservoirTest {
 
         TestClass testPutObject = new TestClass();
         testPutObject.setTestString(TEST_STRING);
-        Reservoir.put(KEY, testPutObject);
+        Vault.put(KEY, testPutObject);
 
-        Reservoir.deleteAsync(KEY).subscribe(new Observer<Boolean>() {
+        Vault.deleteAsync(KEY).subscribe(new Observer<Boolean>() {
             @Override
             public void onCompleted() {
 
@@ -248,7 +248,7 @@ public class ReservoirTest {
             @Override
             public void onNext(Boolean success) {
                 try {
-                    assertEquals(false, Reservoir.contains(KEY));
+                    assertEquals(false, Vault.contains(KEY));
                 } catch (Exception e) {
                     fail();
                 }
@@ -262,11 +262,11 @@ public class ReservoirTest {
 
         TestClass testPutObject = new TestClass();
         testPutObject.setTestString(TEST_STRING);
-        Reservoir.put(KEY, testPutObject);
+        Vault.put(KEY, testPutObject);
 
-        Reservoir.clear();
+        Vault.clear();
 
-        assertEquals(0, Reservoir.bytesUsed());
+        assertEquals(0, Vault.bytesUsed());
 
     }
 
@@ -276,13 +276,13 @@ public class ReservoirTest {
 
         TestClass testPutObject = new TestClass();
         testPutObject.setTestString(TEST_STRING);
-        Reservoir.put(KEY, testPutObject);
+        Vault.put(KEY, testPutObject);
 
-        Reservoir.clearAsync(new ReservoirClearCallback() {
+        Vault.clearAsync(new VaultClearCallback() {
             @Override
             public void onSuccess() {
                 try {
-                    assertEquals(0, Reservoir.bytesUsed());
+                    assertEquals(0, Vault.bytesUsed());
                 } catch (Exception e) {
                     fail();
                 }
@@ -302,9 +302,9 @@ public class ReservoirTest {
 
         TestClass testPutObject = new TestClass();
         testPutObject.setTestString(TEST_STRING);
-        Reservoir.put(KEY, testPutObject);
+        Vault.put(KEY, testPutObject);
 
-        Reservoir.clearAsync().subscribe(new Observer<Boolean>() {
+        Vault.clearAsync().subscribe(new Observer<Boolean>() {
             @Override
             public void onCompleted() {
 
@@ -318,7 +318,7 @@ public class ReservoirTest {
             @Override
             public void onNext(Boolean success) {
                 try {
-                    assertEquals(0, Reservoir.bytesUsed());
+                    assertEquals(0, Vault.bytesUsed());
                 } catch (Exception e) {
                     fail();
                 }

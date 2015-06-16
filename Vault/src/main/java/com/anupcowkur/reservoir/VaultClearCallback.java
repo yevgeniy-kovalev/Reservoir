@@ -1,6 +1,6 @@
 package com.anupcowkur.reservoir;
 
-public interface ReservoirPutCallback {
+public interface VaultClearCallback {
     public void onSuccess();
 
     public void onFailure(Exception e);

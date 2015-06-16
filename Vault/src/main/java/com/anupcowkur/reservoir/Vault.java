@@ -3,7 +3,7 @@ package com.anupcowkur.reservoir;
 import android.content.Context;
 import android.os.AsyncTask;
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,13 +16,15 @@ import rx.schedulers.Schedulers;
 /**
  * The main reservoir class.
  */
-public class Reservoir {
+public class Vault {
 
     private static SimpleDiskCache cache;
 
     private static File cacheDir;
 
     private static boolean initialised = false;
+
+    private static ObjectMapper mapper;
 
     /**
      * Initialize Reservoir
@@ -37,6 +39,7 @@ public class Reservoir {
         cacheDir = new File(context.getCacheDir() + "/Reservoir");
         createCache(cacheDir, maxSize);
         initialised = true;
+        mapper = new ObjectMapper();
     }
 
     /**
@@ -90,7 +93,7 @@ public class Reservoir {
      */
     public static void put(final String key, final Object object) throws Exception {
         failIfNotInitialised();
-        String json = new Gson().toJson(object);
+        String json = getMapper().writeValueAsString(object);
         cache.put(key, json);
     }
 
@@ -101,11 +104,11 @@ public class Reservoir {
      *
      * @param key      the key string.
      * @param object   the object to be stored.
-     * @param callback a callback of type {@link com.anupcowkur.reservoir.ReservoirPutCallback}
+     * @param callback a callback of type {@link VaultPutCallback}
      *                 which is called upon completion.
      */
     public static void putAsync(final String key, final Object object,
-                                final ReservoirPutCallback callback) {
+                                final VaultPutCallback callback) {
         failIfNotInitialised();
         new PutTask(key, object, callback).execute();
     }
@@ -126,7 +129,7 @@ public class Reservoir {
             @Override
             public void call(Subscriber<? super Boolean> subscriber) {
                 try {
-                    Reservoir.put(key, object);
+                    Vault.put(key, object);
                     subscriber.onNext(true);
                     subscriber.onCompleted();
                 } catch (Exception exception) {
@@ -146,7 +149,7 @@ public class Reservoir {
     public static <T> T get(final String key, final Class<T> classOfT) throws Exception {
         failIfNotInitialised();
         String json = cache.getString(key).getString();
-        T value = new Gson().fromJson(json, classOfT);
+        T value = getMapper().readValue(json, classOfT);
         if (value == null)
             throw new NullPointerException();
         return value;
@@ -156,11 +159,11 @@ public class Reservoir {
      * Get an object from Reservoir with the given key asynchronously.
      *
      * @param key      the key string.
-     * @param callback a callback of type {@link com.anupcowkur.reservoir.ReservoirGetCallback}
+     * @param callback a callback of type {@link VaultGetCallback}
      *                 which is called upon completion.
      */
     public static <T> void getAsync(final String key, final Class<T> classOfT,
-                                    final ReservoirGetCallback<T> callback) {
+                                    final VaultGetCallback<T> callback) {
         failIfNotInitialised();
         new GetTask<>(key, classOfT, callback).execute();
     }
@@ -178,7 +181,7 @@ public class Reservoir {
             @Override
             public void call(Subscriber<? super T> subscriber) {
                 try {
-                    T t = Reservoir.get(key, classOfT);
+                    T t = Vault.get(key, classOfT);
                     subscriber.onNext(t);
                     subscriber.onCompleted();
                 } catch (Exception exception) {
@@ -206,10 +209,10 @@ public class Reservoir {
      * key (if any) will be deleted.
      *
      * @param key      the key string.
-     * @param callback a callback of type {@link com.anupcowkur.reservoir.ReservoirDeleteCallback}
+     * @param callback a callback of type {@link VaultDeleteCallback}
      *                 which is called upon completion.
      */
-    public static void deleteAsync(final String key, final ReservoirDeleteCallback callback) {
+    public static void deleteAsync(final String key, final VaultDeleteCallback callback) {
         failIfNotInitialised();
         new DeleteTask(key, callback).execute();
     }
@@ -229,7 +232,7 @@ public class Reservoir {
             @Override
             public void call(Subscriber<? super Boolean> subscriber) {
                 try {
-                    Reservoir.delete(key);
+                    Vault.delete(key);
                     subscriber.onNext(true);
                     subscriber.onCompleted();
                 } catch (Exception exception) {
@@ -252,7 +255,7 @@ public class Reservoir {
     /**
      * Clears the cache. Deletes all the stored key-value pairs asynchronously.
      */
-    public static void clearAsync(final ReservoirClearCallback callback) throws Exception {
+    public static void clearAsync(final VaultClearCallback callback) throws Exception {
         failIfNotInitialised();
         new ClearTask(callback).execute();
     }
@@ -269,7 +272,7 @@ public class Reservoir {
             @Override
             public void call(Subscriber<? super Boolean> subscriber) {
                 try {
-                    Reservoir.clear();
+                    Vault.clear();
                     subscriber.onNext(true);
                     subscriber.onCompleted();
                 } catch (Exception exception) {
@@ -288,16 +291,26 @@ public class Reservoir {
     }
 
     /**
+     *
+     */
+    static ObjectMapper getMapper() {
+        if (mapper == null) {
+            mapper = new ObjectMapper();
+        }
+        return mapper;
+    }
+
+    /**
      * AsyncTask to perform put operation in a background thread.
      */
     private static class PutTask extends AsyncTask<Void, Void, Void> {
 
         private final String key;
         private Exception e;
-        private final ReservoirPutCallback callback;
+        private final VaultPutCallback callback;
         final Object object;
 
-        private PutTask(String key, Object object, ReservoirPutCallback callback) {
+        private PutTask(String key, Object object, VaultPutCallback callback) {
             this.key = key;
             this.callback = callback;
             this.object = object;
@@ -308,7 +321,7 @@ public class Reservoir {
         protected Void doInBackground(Void... params) {
 
             try {
-                String json = new Gson().toJson(object);
+                String json = getMapper().writeValueAsString(object);
                 cache.put(key, json);
             } catch (Exception e) {
                 this.e = e;
@@ -335,11 +348,11 @@ public class Reservoir {
     private static class GetTask<T> extends AsyncTask<Void, Void, T> {
 
         private final String key;
-        private final ReservoirGetCallback callback;
+        private final VaultGetCallback callback;
         private final Class<T> classOfT;
         private Exception e;
 
-        private GetTask(String key, Class<T> classOfT, ReservoirGetCallback callback) {
+        private GetTask(String key, Class<T> classOfT, VaultGetCallback callback) {
             this.key = key;
             this.callback = callback;
             this.classOfT = classOfT;
@@ -350,7 +363,7 @@ public class Reservoir {
         protected T doInBackground(Void... params) {
             try {
                 String json = cache.getString(key).getString();
-                T value = new Gson().fromJson(json, classOfT);
+                T value = getMapper().readValue(json, classOfT);
                 if (value == null)
                     throw new NullPointerException();
                 return value;
@@ -380,9 +393,9 @@ public class Reservoir {
 
         private final String key;
         private Exception e;
-        private final ReservoirDeleteCallback callback;
+        private final VaultDeleteCallback callback;
 
-        private DeleteTask(String key, ReservoirDeleteCallback callback) {
+        private DeleteTask(String key, VaultDeleteCallback callback) {
             this.key = key;
             this.callback = callback;
             this.e = null;
@@ -417,9 +430,9 @@ public class Reservoir {
     private static class ClearTask extends AsyncTask<Void, Void, Void> {
 
         private Exception e;
-        private final ReservoirClearCallback callback;
+        private final VaultClearCallback callback;
 
-        private ClearTask(ReservoirClearCallback callback) {
+        private ClearTask(VaultClearCallback callback) {
             this.callback = callback;
             this.e = null;
         }

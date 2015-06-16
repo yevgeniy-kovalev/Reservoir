@@ -5,9 +5,9 @@ import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
 import android.widget.TextView;
 
-import com.anupcowkur.reservoir.Reservoir;
-import com.anupcowkur.reservoir.ReservoirGetCallback;
-import com.anupcowkur.reservoir.ReservoirPutCallback;
+import com.anupcowkur.reservoir.Vault;
+import com.anupcowkur.reservoir.VaultGetCallback;
+import com.anupcowkur.reservoir.VaultPutCallback;
 
 public class MainActivity extends ActionBarActivity {
 
@@ -34,7 +34,7 @@ public class MainActivity extends ActionBarActivity {
 
         testPutObject.setTestString(TEST_STRING);
 
-        Reservoir.putAsync(KEY, testPutObject, new ReservoirPutCallback() {
+        Vault.putAsync(KEY, testPutObject, new VaultPutCallback() {
             @Override
             public void onSuccess() {
                 getFromReservoir(); //async put call completed, execute get call.
@@ -50,7 +50,7 @@ public class MainActivity extends ActionBarActivity {
 
     private void getFromReservoir() {
 
-        Reservoir.getAsync(KEY, TestClass.class, new ReservoirGetCallback<TestClass>() {
+        Vault.getAsync(KEY, TestClass.class, new VaultGetCallback<TestClass>() {
             @Override
             public void onFailure(Exception e) {
                 tv_status.setText(e.getMessage()); //failure.
